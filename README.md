@@ -1,6 +1,9 @@
+fork from https://github.com/arcalinea/bellman-examples  
+use filecoin [bellperson](https://github.com/filecoin-project/bellman).
+
 # Bellman examples 
 
-Examples of circuits for [bellman](https://github.com/zkcrypto/bellman/), a Rust zk-SNARKs library.
+Examples of circuits for [bellperson](https://github.com/filecoin-project/bellman), a Rust zk-SNARKs library.
 
 Bellman provides a `Circuit` trait which you can use to synthesize the constraints in your program.
 

@@ -1,23 +1,31 @@
 #![allow(unused_imports)]
 #![allow(unused_variables)]
-extern crate bellman;
-extern crate pairing;
+extern crate bellperson as bellman;
+extern crate paired;
 extern crate rand;
+extern crate ff;
+extern crate log;
+
+use ff::{Field, PrimeField};
 use bellman::{Circuit, ConstraintSystem, SynthesisError};
-use pairing::{Engine, Field, PrimeField};
+use paired::{
+    Engine,
+    bls12_381::{Bls12, Fr}
+};
+use rand::thread_rng;
+use bellman::groth16::{
+    self, create_random_proof_batch, generate_random_parameters, prepare_verifying_key, verify_proof, Proof,
+};
+use log::*;
 
 mod cube; 
 
 fn main(){
-    use pairing::bls12_381::{Bls12, Fr};
-    use rand::thread_rng;
-    use bellman::groth16::{
-        create_random_proof, generate_random_parameters, prepare_verifying_key, verify_proof, Proof,
-    };
+    fil_logger::init();
 
     println!("Prove that I know x such that x^3 + x + 5 == 35.");
     
-    let rng = &mut thread_rng();
+    let rng = &mut rand_core::OsRng;
     
     println!("Creating parameters...");
     
@@ -41,11 +49,23 @@ fn main(){
     };
     
     // Create a groth16 proof with our parameters.
-    let proof = create_random_proof(c, &params, rng).unwrap();
-        
+    let groth_proofs = create_random_proof_batch(vec![c], &params, rng).unwrap();
+
+    let proof:Vec<groth16::Proof<Bls12>> = groth_proofs
+        .into_iter()
+        .map(|groth_proof| {
+            let mut proof_vec = vec![];
+            groth_proof.write(&mut proof_vec)?;
+            let gp = groth16::Proof::<Bls12>::read(&proof_vec[..])?;
+            Ok(gp)
+        })
+        .collect::<Result<Vec<_>, std::io::Error>>().unwrap();
+
+    info!("verify");
+
     assert!(verify_proof(
         &pvk,
-        &proof,
+        &proof[0],
         &[Fr::from_str("35").unwrap()]
     ).unwrap());
 }
